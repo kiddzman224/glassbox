@@ -57,6 +57,12 @@ and `/Users/alice/go/pkg` produce different binaries.
 timestamp of the HEAD commit), not from the wall clock, so it is the same in
 every build of the same commit.
 
+> **Makefile note:** `BUILD_DATE` in the Makefile is computed from
+> `SOURCE_DATE_EPOCH` using `date -u -d @EPOCH` (GNU/Linux) or
+> `date -u -r EPOCH` (BSD/macOS). It must not be derived from `date -u`
+> without the epoch argument, as wall-clock time differs between machines and
+> build runs.
+
 **`CGO_ENABLED=0`** disables the C toolchain entirely. CGO output includes host
 paths and can vary between systems.
 
@@ -102,15 +108,27 @@ Reference: <https://reproducible-builds.org/docs/source-date-epoch/>
 ### Quick check (one target)
 
 ```bash
-# Verify linux/amd64 is reproducible on your machine
+# Verify linux/amd64 is reproducible on your machine (default)
 make reproducibility-check
 
-# Or specify a different target
+# Supported targets: linux-amd64, linux-arm64, darwin-amd64, darwin-arm64, windows-amd64
 bash scripts/check-reproducibility.sh linux-arm64
 
 # Windows produces a reproducible .zip instead of a .tar.gz
 bash scripts/check-reproducibility.sh windows-amd64
 ```
+
+> **darwin and windows targets:** `check-reproducibility.sh` cross-compiles
+> (`GOOS=darwin` / `GOOS=windows`) and compares the resulting binaries and
+> archives. The compilation step runs on any host with Go installed; no macOS
+> machine or Wine installation is required to verify that two builds produce
+> identical bytes. Executing the darwin or Windows binary is a separate step
+> (see `scripts/verify-release.sh`).
+>
+> In CI, `scripts/verify-release.sh` smoke-tests each binary on the native
+> runner where possible. For darwin binaries built on a Linux CI runner the
+> execution tests are reported as `[SKIP-UNAVAILABLE]` — this is expected and
+> does not indicate a build failure. The presence and SHA-256 checks still run.
 
 Expected output when reproducible:
 

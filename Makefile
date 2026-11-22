@@ -16,7 +16,10 @@
 # Build variables
 VERSION?=$(shell git describe --tags --always --dirty 2>/dev/null || echo "dev")
 COMMIT_SHA?=$(shell git rev-parse HEAD 2>/dev/null || echo "unknown")
-BUILD_DATE?=$(shell date -u +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || echo "unknown")
+# BUILD_DATE is derived from SOURCE_DATE_EPOCH (the HEAD commit timestamp) so
+# that two builds from the same source produce an identical date string.
+# Using wall-clock time here would break binary reproducibility across machines.
+# SOURCE_DATE_EPOCH is set below; it must be defined first.
 DIST_DIR?=dist/release
 
 # ── Reproducible builds ────────────────────────────────────────────────────
@@ -31,6 +34,14 @@ DIST_DIR?=dist/release
 # Reference: https://reproducible-builds.org/docs/source-date-epoch/
 SOURCE_DATE_EPOCH?=$(shell git log -1 --format=%ct 2>/dev/null || echo "0")
 export SOURCE_DATE_EPOCH
+
+# BUILD_DATE is derived from SOURCE_DATE_EPOCH so that every build of the same
+# commit produces an identical date string regardless of when it is run.
+# date -u -d is GNU (Linux); date -u -r is BSD (macOS).
+BUILD_DATE?=$(shell \
+  date -u -d "@$(SOURCE_DATE_EPOCH)" +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
+  date -u -r "$(SOURCE_DATE_EPOCH)"  +"%Y-%m-%dT%H:%M:%SZ" 2>/dev/null || \
+  echo "unknown")
 
 # Manifest signing variables — override on the command line or via environment.
 # GLASSBOX_MANIFEST_SIGNING_KEY must be set externally (never default here).

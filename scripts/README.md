@@ -87,6 +87,149 @@ GLASSBOX_ISSUE_COUNT=40 ./scripts/verify_issues.sh
   - Override with `--count N` or `GLASSBOX_ISSUE_COUNT=N` for a different wave size
   - Verify the label name is correct
 
+## Release scripts
+
+The following scripts are used in the release pipeline and can be run locally
+to verify or reproduce release artifacts.
+
+### `verify-release.sh`
+
+Smoke-tests release artifacts in `dist/release/` (or a directory you supply).
+
+**Checks performed:**
+1. All five expected binaries exist and are non-empty:
+   `glassbox-linux-amd64`, `glassbox-linux-arm64`,
+   `glassbox-darwin-amd64`, `glassbox-darwin-arm64`,
+   `glassbox-windows-amd64.exe`
+2. Each binary is exercised with five offline commands (`--version`, `--help`,
+   `debug --demo`, `debug --dry-run --help`, `version --json`) on the native
+   platform. Cross-platform binaries are run via `wine` (Windows on Linux) or
+   `qemu-*-static` (cross-arch Linux) when available; otherwise reported as
+   `[SKIP-UNAVAILABLE]` — not a failure.
+3. `checksums.sha256` exists and all entries pass `sha256sum --check`.
+4. `version.txt` contains non-empty `version`, `commit`, and `build_date` fields.
+
+**Usage:**
+```bash
+# Run against the default dist/release directory
+bash scripts/verify-release.sh
+
+# Run against a custom directory
+bash scripts/verify-release.sh /path/to/dist
+```
+
+**Called by:** `make verify-release` and the `package` job in
+`.github/workflows/release.yml`.
+
+**Expected exit codes:** `0` all checks passed, `1` one or more checks failed.
+
+---
+
+### `check-reproducibility.sh`
+
+Builds a release binary twice in fully isolated `GOPATH`/`GOCACHE`
+environments and compares SHA-256 hashes to confirm byte-identical output.
+
+**Supported targets:** `linux-amd64` (default), `linux-arm64`, `darwin-amd64`,
+`darwin-arm64`, `windows-amd64`.
+
+**Usage:**
+```bash
+# Default: linux-amd64
+make reproducibility-check
+bash scripts/check-reproducibility.sh
+
+# Specific target
+bash scripts/check-reproducibility.sh darwin-arm64
+
+# Keep temp dirs for diffoscope inspection
+KEEP_BUILD_DIRS=1 bash scripts/check-reproducibility.sh linux-amd64
+```
+
+**Expected output (success):**
+```
+Reproducibility check
+  Target             : linux-amd64 (linux/amd64)
+  SOURCE_DATE_EPOCH  : 1700000000
+  ...
+  [PASS] Binary identical: 4f3e2a1b...
+  [PASS] Archive identical: 9c8d7e6f...
+Result: builds are reproducible for target linux-amd64.
+```
+
+See [docs/reproducible-builds.md](../docs/reproducible-builds.md) for the full
+troubleshooting guide.
+
+---
+
+### `verify-manifest.sh`
+
+Offline verification of a signed release `manifest.json`. Requires only
+`bash`, `python3`, and optionally `pip install cryptography` for the Ed25519
+signature step.
+
+**Usage:**
+```bash
+# Verify manifest and artifacts in dist/release
+bash scripts/verify-manifest.sh dist/release/manifest.json dist/release
+
+# Verify after downloading a release
+curl -LO https://github.com/dotandev/glassbox/releases/download/v1.2.3/manifest.json
+pip install cryptography
+bash scripts/verify-manifest.sh manifest.json .
+```
+
+**Expected exit codes:** `0` all checks passed, `1` one or more checks failed.
+
+---
+
+### `verify_protocol_registration_windows.ps1`
+
+Smoke-tests the `glassbox://` custom URL protocol handler registry entries on
+Windows. Verifies that `HKCU\Software\Classes\glassbox` and its
+`\shell\open\command` sub-key exist, that the `URL Protocol` value is present,
+and that the command string invokes `protocol-handler`.
+
+Set `GLASSBOX_BINARY` to verify the command references a specific binary path.
+
+**Usage:**
+```powershell
+powershell -ExecutionPolicy Bypass -File scripts\verify_protocol_registration_windows.ps1
+
+# With binary path check
+$env:GLASSBOX_BINARY = "C:\Program Files\Glassbox\glassbox.exe"
+powershell -ExecutionPolicy Bypass -File scripts\verify_protocol_registration_windows.ps1
+```
+
+---
+
+### `verify_protocol_registration_macos.sh`
+
+Smoke-tests the `glassbox://` protocol handler on macOS. Checks the `.app`
+bundle plist, the helper executable, and (when `lsregister` is available) the
+Launch Services database.
+
+**Usage:**
+```bash
+bash scripts/verify_protocol_registration_macos.sh
+GLASSBOX_BINARY=/usr/local/bin/glassbox bash scripts/verify_protocol_registration_macos.sh
+```
+
+---
+
+### `verify_protocol_registration_linux.sh`
+
+Smoke-tests the `glassbox://` protocol handler on Linux. Checks the
+`.desktop` file, the helper script, and the `xdg-mime` default handler.
+
+**Usage:**
+```bash
+bash scripts/verify_protocol_registration_linux.sh
+GLASSBOX_BINARY=/usr/local/bin/glassbox bash scripts/verify_protocol_registration_linux.sh
+```
+
+---
+
 ### `index_regression_fixtures.sh`
 
 Builds and validates a repository-wide regression fixture index at

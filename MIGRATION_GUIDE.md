@@ -1,6 +1,56 @@
-# Migration Guide: Debug and Trace Export Improvements
+# Migration Guide
 
-This guide helps existing Glassbox users adapt to the enhanced validation and error handling in the debug command and trace export functionality.
+This guide documents every breaking or deprecating change to user-visible Glassbox surfaces and the steps needed to adapt existing scripts, CI pipelines, and integrations.
+
+Entries are ordered newest-first. Each entry matches a changelog fragment with `breaking = true` or `category = "cli"` / `category = "schema"` and a deprecation note.
+
+See [docs/compatibility-matrix.md](docs/compatibility-matrix.md) for the full stability table and deprecation windows.
+
+---
+
+## Deprecated surfaces (action required before removal)
+
+### `--hsm-provider` → `--signing-provider pkcs11` (deprecated since 0.3, removal target v2.0)
+
+**What changed:** The `--hsm-provider` flag on `audit:sign` is deprecated. Use `--signing-provider pkcs11` instead.
+
+**Before:**
+```bash
+glassbox audit:sign --hsm-provider --payload-file payload.json
+```
+
+**After:**
+```bash
+glassbox audit:sign --signing-provider pkcs11 --payload-file payload.json
+```
+
+Both flags are accepted in all releases before v2.0. The deprecated flag prints a deprecation warning to stderr on each use.
+
+---
+
+### `GLASSBOX_SIGNER_TYPE` → `GLASSBOX_SIGNING_PROVIDER` (deprecated since 0.3, removal target v2.0)
+
+**What changed:** The `GLASSBOX_SIGNER_TYPE` environment variable is deprecated. Use `GLASSBOX_SIGNING_PROVIDER` instead.
+
+**Before:**
+```bash
+export GLASSBOX_SIGNER_TYPE=pkcs11
+glassbox audit:sign --payload-file payload.json
+```
+
+**After:**
+```bash
+export GLASSBOX_SIGNING_PROVIDER=pkcs11
+glassbox audit:sign --payload-file payload.json
+```
+
+Both variables are accepted in all releases before v2.0.
+
+---
+
+## Debug and Trace Export Improvements
+
+This section helps existing Glassbox users adapt to the enhanced validation and error handling in the debug command and trace export functionality.
 
 ---
 

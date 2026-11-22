@@ -154,6 +154,21 @@ Every entry links to an existing guide; nothing is duplicated here.
 
 ---
 
+## Journey 11 — Verify or reproduce a release
+
+**You want to confirm a downloaded release artifact is authentic and unmodified,
+or reproduce a published binary from source.**
+
+| Step | Document |
+|---|---|
+| Verify artifact checksums and Ed25519 manifest signature | [Release Manifest](./release-manifest.md) |
+| Understand what provenance data is recorded | [Release Provenance](./release-provenance.md) |
+| Reproduce a published binary locally | [Reproducible Builds](./reproducible-builds.md) |
+| Understand migration steps for deprecated flags | [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md) |
+| Smoke-test a local release build | `bash scripts/verify-release.sh dist/release` |
+
+---
+
 ## Quick-reference: running `--help`
 
 When you know the command but want to confirm accepted values and defaults:

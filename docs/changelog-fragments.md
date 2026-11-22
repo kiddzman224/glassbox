@@ -223,7 +223,10 @@ Every breaking change also requires:
 
 - An entry in `docs/compatibility-matrix.md` (update the stability level to
   `deprecated` or `removed` as appropriate).
-- An entry in `MIGRATION_GUIDE.md` with before/after examples.
+- An entry in `MIGRATION_GUIDE.md` with before/after examples. Breaking changes
+  go in the **Deprecated surfaces** section at the top of that file; each entry
+  must include the flag or env var name, the replacement, the deprecated-since
+  version, and the removal target version.
 - Regenerated API snapshot files (the CI snapshot check will fail until they
   are updated).
 

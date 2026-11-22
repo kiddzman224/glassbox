@@ -76,8 +76,8 @@
 
 $ErrorActionPreference = 'Stop'
 
-$registryPath = 'Registry::HKEY_CURRENT_USER\Software\Classes\erst'
-$commandPath = 'Registry::HKEY_CURRENT_USER\Software\Classes\erst\shell\open\command'
+$registryPath = 'Registry::HKEY_CURRENT_USER\Software\Classes\glassbox'
+$commandPath  = 'Registry::HKEY_CURRENT_USER\Software\Classes\glassbox\shell\open\command'
 
 if (-not (Test-Path $registryPath)) {
     throw "Missing protocol registry key: $registryPath"
@@ -87,23 +87,23 @@ if (-not (Test-Path $commandPath)) {
     throw "Missing protocol open command key: $commandPath"
 }
 
-$rootKey = Get-Item $registryPath
+$rootKey     = Get-Item $registryPath
 $urlProtocol = $rootKey.GetValue('URL Protocol', $null)
 if ($null -eq $urlProtocol) {
     throw 'Missing URL Protocol registry value'
 }
 
 $commandKey = Get-Item $commandPath
-$command = $commandKey.GetValue('')
+$command    = $commandKey.GetValue('')
 if ([string]::IsNullOrWhiteSpace($command)) {
     throw 'Missing default protocol open command'
 }
 
-if ($env:ERST_BINARY) {
-    # Normalize paths to use forward slashes for cross-platform comparison
+if ($env:GLASSBOX_BINARY) {
+    # Normalize paths to use forward slashes for cross-tool comparison.
     $normalizedCommand = $command.Replace('\', '/')
-    $normalizedBinary = $env:ERST_BINARY.Replace('\', '/')
-    
+    $normalizedBinary  = $env:GLASSBOX_BINARY.Replace('\', '/')
+
     if ($normalizedCommand -notlike "*$normalizedBinary*") {
         throw "Protocol command does not reference expected binary: $normalizedBinary (got $normalizedCommand)"
     }
